@@ -2,32 +2,29 @@ use std::error::Error;
 use dotenv::dotenv;
 use sqlx::Connection;
 use sqlx::Row;
-use std::env;
-use crate::pg_auth; 
+//use std::env;
 
-pub mod auth;
+use postgres::pgsql;
+pub mod postgres;
+
 
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>>{
     dotenv().ok();
-    let user = env::var("PG_USER").unwrap();
-    let pass = env::var("PG_PASS").unwrap();
-    let dbnm = env::var("PG_DBNM").unwrap();
-    let url = format!("postgres://{user}:{pass}@localhost:5432/{database}", user=user, pass=pass, database=dbnm); //hello-postgres
+    let conn_string = postgres::auth::pg_auth::get_pg_connection();
 
-    let args: Vec<String> = env::args().collect();
+    //let args: Vec<String> = env::args().collect();
 
-    println!("{}",url);
-    let mut conn = sqlx::postgres::PgConnection::connect(&url).await?;
+    println!("{}",conn_string);
+    let mut conn = sqlx::postgres::PgConnection::connect(&conn_string).await?;
 
-    let res = sqlx::query("SELECT 1 + 1 as sum")
-        .fetch_one(&mut conn)
-        .await?;
+    pgsql::commands::create_table_query(&mut conn, "hello_world2").await?;
 
-    let sum:i32 = res.get("sum");
+    // let res = sqlx::query(&qry)
+    //     .fetch_one(&mut conn)
+    //     .await?;
 
-    println!("1 + 1 = {}", sum);
     Ok(())
 }
